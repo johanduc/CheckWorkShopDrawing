@@ -36,6 +36,7 @@ namespace CheckWorkShopDrawing
             this.col_DrawingMark = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.col_TypeMissing = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.col_missingID = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.btn_ShowInModel = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.adgv_ResultTable)).BeginInit();
             this.SuspendLayout();
             // 
@@ -112,12 +113,26 @@ namespace CheckWorkShopDrawing
             this.col_missingID.ReadOnly = true;
             this.col_missingID.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
             // 
+            // btn_ShowInModel
+            // 
+            this.btn_ShowInModel.BackColor = System.Drawing.Color.Gray;
+            this.btn_ShowInModel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btn_ShowInModel.ForeColor = System.Drawing.Color.White;
+            this.btn_ShowInModel.Location = new System.Drawing.Point(208, 437);
+            this.btn_ShowInModel.Name = "btn_ShowInModel";
+            this.btn_ShowInModel.Size = new System.Drawing.Size(115, 32);
+            this.btn_ShowInModel.TabIndex = 3;
+            this.btn_ShowInModel.Text = "Show in model";
+            this.btn_ShowInModel.UseVisualStyleBackColor = false;
+            this.btn_ShowInModel.Visible = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(568, 476);
+            this.Controls.Add(this.btn_ShowInModel);
             this.Controls.Add(this.adgv_ResultTable);
             this.Controls.Add(this.btn_CheckDrawing);
             this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -140,6 +155,7 @@ namespace CheckWorkShopDrawing
         private System.Windows.Forms.DataGridViewTextBoxColumn col_DrawingMark;
         private System.Windows.Forms.DataGridViewTextBoxColumn col_TypeMissing;
         private System.Windows.Forms.DataGridViewTextBoxColumn col_missingID;
+        private System.Windows.Forms.Button btn_ShowInModel;
     }
 }
 
