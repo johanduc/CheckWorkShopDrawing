@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Collections;
 using System.Reflection;
+using System.Data;
 
 using Tekla.Structures;
 using Tekla.Structures.Model;
@@ -17,6 +18,7 @@ using tsd = Tekla.Structures.Drawing;
 using tsdui = Tekla.Structures.Drawing.UI;
 
 using CheckWorkShopDrawing.Info;
+using CheckWorkShopDrawing.Utils;
 
 namespace CheckWorkShopDrawing.Drawing
 {
@@ -38,86 +40,98 @@ namespace CheckWorkShopDrawing.Drawing
             tsm.Part mainPart = assembly.GetMainPart() as tsm.Part;
             ArrayList secondaries = assembly.GetSecondaries();
 
-            //Get list_Weld_ID_In_Model
-            List<Identifier> list_Weld_ID_In_Model = new List<Identifier>();
-            tsm.ModelObjectEnumerator weldList_In_Model = mainPart.GetWelds();
-            if (weldList_In_Model.GetSize() > 0)
+            InfoFromModel infoFromModel = new InfoFromModel()
             {
-                while (weldList_In_Model.MoveNext())
+                mainPart = mainPart,
+                secondaries = secondaries
+            };
+
+            InfoFromDrawing infoFromDrawing = new InfoFromDrawing()
+            {
+                allViews = allViews
+            };
+
+            #region Check Weld Mark
+            //Check Weld Mark
+            List<Identifier> list_Weld_Identifier_In_Model = infoFromModel.GetListWeldIdentifier();
+            List<Identifier> list_Weld_Identifier_In_Drawing = infoFromDrawing.GetListWeldIdentifier();
+            List<Identifier> list_Weld_Identifier_Missing = new List<Identifier>();
+
+            if (list_Weld_Identifier_In_Model.Count != list_Weld_Identifier_In_Drawing.Count)
+            {
+                list_Weld_Identifier_Missing = list_Weld_Identifier_In_Model.Except(list_Weld_Identifier_In_Drawing).ToList();
+            }
+            List<WeldMarkInfo> missing_weldMarkInfos = WeldMarkInfo.Get_Infos_Missing_Weld(list_Weld_Identifier_Missing);
+
+            if (missing_weldMarkInfos.Count > 0)
+            {
+                foreach (WeldMarkInfo weldMarkInfo in missing_weldMarkInfos)
                 {
-                    tsm.BaseWeld weld = weldList_In_Model.Current as tsm.BaseWeld;
-                    if (!list_Weld_ID_In_Model.Contains(weld.Identifier))
-                        list_Weld_ID_In_Model.Add(weld.Identifier);
+                    DataRow newRow = Form1.dtInfo.NewRow();
+                    newRow["col_No"] = Form1.count++;
+                    newRow["col_DrawingType"] = "Assembly";
+                    newRow["col_DrawingMark"] = assemDR.Mark;
+                    newRow["col_TypeMissing"] = "Weld Mark";
+                    newRow["col_missingID"] = weldMarkInfo.ID;
+                    Form1.dtInfo.Rows.Add(newRow);
+                }
+            }
+            #endregion
+
+            #region Check Part Mark
+            //Check Part Mark
+            List<Identifier> list_Part_Identifier_In_Model = infoFromModel.GetListPartIdentifier();
+            List<Identifier> list_Part_Identifier_In_Drawing = infoFromDrawing.GetListPartIdentifier();
+            List<Identifier> list_Part_Identifier_Missing = new List<Identifier>();
+
+            if (list_Part_Identifier_In_Model.Count != list_Part_Identifier_In_Drawing.Count)
+            {
+                list_Part_Identifier_Missing = list_Part_Identifier_In_Model.Except(list_Part_Identifier_In_Drawing).ToList();
+            }
+            List<PartMarkInfo> missing_partMarkInfos = PartMarkInfo.Get_Infos_Missing_Part(list_Part_Identifier_Missing);
+
+            if (missing_partMarkInfos.Count > 0)
+            {
+                foreach (PartMarkInfo partMarkInfo in missing_partMarkInfos)
+                {
+                    DataRow newRow = Form1.dtInfo.NewRow();
+                    newRow["col_No"] = Form1.count++;
+                    newRow["col_DrawingType"] = "Assembly";
+                    newRow["col_DrawingMark"] = assemDR.Mark;
+                    newRow["col_TypeMissing"] = "Part Mark";
+                    newRow["col_missingID"] = partMarkInfo.ID;
+                    Form1.dtInfo.Rows.Add(newRow);
+                }
+            }
+            #endregion
+
+            #region Check Bolt Mark
+            //Check Bolt Mark
+            List<Identifier> list_Bolt_Identifier_In_Model = infoFromModel.GetListBoltIdentifier();
+            List<Identifier> list_Bolt_Identifier_In_Drawing = infoFromDrawing.GetListBoltIdentifier();
+            List<Identifier> list_Bolt_Identifier_Missing = new List<Identifier>();
+            if (list_Bolt_Identifier_In_Model.Count != list_Bolt_Identifier_In_Drawing.Count)
+            {
+                list_Bolt_Identifier_Missing = list_Bolt_Identifier_In_Model.Except(list_Bolt_Identifier_In_Drawing).ToList();
+            }
+            List<BoltMarkInfo> missing_boltMarkInfos = BoltMarkInfo.Get_Infos_Missing_Bolt(list_Bolt_Identifier_Missing);
+
+            if (missing_boltMarkInfos.Count > 0)
+            {
+                foreach (BoltMarkInfo boltMarkInfo in missing_boltMarkInfos)
+                {
+                    DataRow newRow = Form1.dtInfo.NewRow();
+                    newRow["col_No"] = Form1.count++;
+                    newRow["col_DrawingType"] = "Assembly";
+                    newRow["col_DrawingMark"] = assemDR.Mark;
+                    newRow["col_TypeMissing"] = "Bolt Mark";
+                    newRow["col_missingID"] = boltMarkInfo.ID;
+                    Form1.dtInfo.Rows.Add(newRow);
                 }
             }
 
-            foreach (tsm.Part secondary in secondaries)
-            {
-                weldList_In_Model = secondary.GetWelds();
-                if (weldList_In_Model.GetSize() > 0)
-                {
-                    while (weldList_In_Model.MoveNext())
-                    {
-                        tsm.BaseWeld weld = weldList_In_Model.Current as tsm.BaseWeld;
-                        if (!list_Weld_ID_In_Model.Contains(weld.Identifier))
-                            list_Weld_ID_In_Model.Add(weld.Identifier);
-                    }
-                }
-            }
-
-            // Get list_Bolt_ID_In_Model
-            List<Identifier> list_Bolt_ID_In_Model = new List<Identifier>();
-            tsm.ModelObjectEnumerator boltList_In_Model = mainPart.GetBolts();
-            if(boltList_In_Model.GetSize() > 0)
-            {
-                while (boltList_In_Model.MoveNext())
-                {
-                    tsm.BoltGroup boltGroup = boltList_In_Model.Current as tsm.BoltGroup;
-                    if(!list_Bolt_ID_In_Model.Contains(boltGroup.Identifier))
-                    {
-                        list_Bolt_ID_In_Model.Add(boltGroup.Identifier);
-                    }
-                }
-            }
-
-            foreach (tsm.Part secondary in secondaries)
-            {
-                boltList_In_Model = secondary.GetBolts();
-                if(boltList_In_Model.GetSize() > 0)
-                {
-                    while (boltList_In_Model.MoveNext())
-                    {
-                        tsm.BoltGroup boltGroup = boltList_In_Model.Current as tsm.BoltGroup;
-                        if (!list_Bolt_ID_In_Model.Contains(boltGroup.Identifier))
-                        {
-                            list_Bolt_ID_In_Model.Add(boltGroup.Identifier);
-                        }
-                    }
-                }
-            }
-
-            List<Identifier> list_Weld_ID_In_Drawing = new List<Identifier>();
-
-            //while (allViews.MoveNext())
-            //{
-            //    if (!(allViews.Current is tsd.View)) continue;
-            //    tsd.View currentView = allViews.Current as tsd.View;
-            //    tsd.DrawingObjectEnumerator drawingObject = currentView.GetObjects();
-            //    tsd.DrawingObjectEnumerator weldMarkList = currentView.GetObjects(new Type[] { typeof(tsd.WeldMark) });
-            //    List<int> list = new List<int>();
-            //    while (weldMarkList.MoveNext())
-            //    {
-            //        tsd.WeldMark weldMark = weldMarkList.Current as tsd.WeldMark;
-            //        Identifier id12 = weldMark.ModelIdentifier;
-            //        list.Add(id12.ID);
-            //    }
-            //    //while (drawingObject.MoveNext())
-            //    //{
-            //    //    MessageBox.Show(drawingObject.Current.GetType().ToString());
-            //    //}
-            //    List<int> noDup = list.Distinct().ToList();
-            //}
-
+            #endregion
+            
             List<Identifier> list_ID_Object_From_Mark = new List<Identifier>();
 
             while (allViews.MoveNext())
@@ -125,34 +139,19 @@ namespace CheckWorkShopDrawing.Drawing
                 if (!(allViews.Current is tsd.View)) continue;
                 tsd.View currentView = allViews.Current as tsd.View;
 
-                //Dimension List
-                tsd.DrawingObjectEnumerator dimensionList = currentView.GetObjects(new Type[] { typeof(tsd.DimensionSetBase) });
-                while (dimensionList.MoveNext())
-                {
-                    if (dimensionList.Current is tsd.StraightDimensionSet)
-                    {
-                        tsd.StraightDimensionSet straightDimensionSet = dimensionList.Current as tsd.StraightDimensionSet;
-                    }
-                    else if (dimensionList.Current is tsd.CurvedDimensionSetBase)
-                    {
-                        tsd.CurvedDimensionSetBase curvedDimensionSetBase = dimensionList.Current as tsd.CurvedDimensionSetBase;
-                    }
-                }
-
-                //Weld Mark List
-                tsd.DrawingObjectEnumerator weldMarkList = currentView.GetObjects(new Type[] { typeof(tsd.WeldMark) });
-                List<int> weld_ID_CurrentView = new List<int>();
-                while (weldMarkList.MoveNext())
-                {
-                    tsd.WeldMark weldMark = weldMarkList.Current as tsd.WeldMark;
-                    if (!weld_ID_CurrentView.Contains(weldMark.ModelIdentifier.ID))
-                        weld_ID_CurrentView.Add(weldMark.ModelIdentifier.ID);
-
-                    if (!list_Weld_ID_In_Drawing.Contains(weldMark.ModelIdentifier))
-                        list_Weld_ID_In_Drawing.Add(weldMark.ModelIdentifier);
-                }
-
-                //weld_ID_CurrentView.Sort();
+                ////Dimension List
+                //tsd.DrawingObjectEnumerator dimensionList = currentView.GetObjects(new Type[] { typeof(tsd.DimensionSetBase) });
+                //while (dimensionList.MoveNext())
+                //{
+                //    if (dimensionList.Current is tsd.StraightDimensionSet)
+                //    {
+                //        tsd.StraightDimensionSet straightDimensionSet = dimensionList.Current as tsd.StraightDimensionSet;
+                //    }
+                //    else if (dimensionList.Current is tsd.CurvedDimensionSetBase)
+                //    {
+                //        tsd.CurvedDimensionSetBase curvedDimensionSetBase = dimensionList.Current as tsd.CurvedDimensionSetBase;
+                //    }
+                //}
 
                 ////Part List
                 //List<int> part_ID_CurrentView = new List<int>();
@@ -189,32 +188,6 @@ namespace CheckWorkShopDrawing.Drawing
 
                 //Mark List
                 tsd.DrawingObjectEnumerator MarkList = currentView.GetObjects(new Type[] { typeof(tsd.Mark) });
-                while(MarkList.MoveNext())
-                {
-                    
-                    tsd.Mark mark = MarkList.Current as tsd.Mark;
-                    tsd.MarkBase.MarkBaseAttributes markBaseAttributes = mark.Attributes;
-                    Type type = markBaseAttributes.GetType();
-                    FieldInfo field = type.GetField("ModelObjectIdentifier", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    string value = field.GetValue(markBaseAttributes).ToString();
-                    if (value == null) continue;
-                    int id_value = Convert.ToInt32(value);
-                    if (value != null)
-                    {
-                        Identifier objectID = new Identifier(id_value);
-                        tsm.ModelObject mObj = Form1.model.SelectModelObject(objectID);
-                        Console.WriteLine(mObj.GetType().ToString());
-                        if (mObj is tsm.BoltGroup || mObj is tsm.Part)
-                        {
-                            list_ID_Object_From_Mark.Add(mObj.Identifier);
-                        }
-                    }
-                    else
-                    {
-                        int i = 0;
-                    }
-                }
-                //MessageBox.Show(MarkList.GetSize().ToString());
 
                 //Connection List
                 tsd.DrawingObjectEnumerator ConnectionList = currentView.GetObjects(new Type[] { typeof(tsd.Connection) });
@@ -224,25 +197,6 @@ namespace CheckWorkShopDrawing.Drawing
                 tsd.DrawingObjectEnumerator BoltList = currentView.GetObjects(new Type[] { typeof(tsd.Bolt) });
                 //MessageBox.Show(BoltList.GetSize().ToString());
 
-            }
-
-            List<Identifier> list_Weld_ID_Missing = new List<Identifier>();
-
-            if (list_Weld_ID_In_Model != list_Weld_ID_In_Drawing)
-            {
-                list_Weld_ID_Missing = list_Weld_ID_In_Model.Except(list_Weld_ID_In_Drawing).ToList();
-            }
-
-            List<WeldMarkInfo> weldMarkInfos = new List<WeldMarkInfo>();
-
-            foreach (Identifier weldID in list_Weld_ID_Missing)
-            {
-                WeldMarkInfo weldMarkInfo = new WeldMarkInfo();
-                tsm.BaseWeld baseWeld = Form1.model.SelectModelObject(weldID) as tsm.BaseWeld;
-                weldMarkInfo.ID = baseWeld.Identifier.ID;
-                weldMarkInfo.mainObject = baseWeld.MainObject;
-                weldMarkInfo.secondaryObject = baseWeld.SecondaryObject;
-                weldMarkInfos.Add(weldMarkInfo);
             }
         }
     }
